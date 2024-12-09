@@ -164,8 +164,8 @@ def average_time_first_last_result(combined_runs):
                 mean_tfr = tfr / n
                 mean_tlr = tlr / n
             else:
-                mean_tlr = 0
-                mean_tfr = 0
+                mean_tlr = -1
+                mean_tfr = -1
             experiment_output[template] = [mean_tfr, mean_tlr]
         output[experiment] = experiment_output
     return output
@@ -173,7 +173,6 @@ def average_time_first_last_result(combined_runs):
 
 def make_relative(data):
     output = {}
-    baseline = data['breadth-first']
     for experiment, templates in data.items():
         relative_to_bfs = {}
         for template, timestamps in data[experiment].items():
