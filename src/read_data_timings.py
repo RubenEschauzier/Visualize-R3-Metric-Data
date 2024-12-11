@@ -50,6 +50,7 @@ def combine_runs(run_data, experiments_list):
         output_key = experiment['combination']
         output_name = experiment['type']
         data = run_data[output_key]
+        # {template_0 : [run1: [timestamps_q_0, timestamps_1, run2: [], ...]}
         grouped_runs_mean = {}
         grouped_runs_std = {}
         run_counts = []
@@ -87,8 +88,9 @@ def group_by_template(run_data):
 
 
 def group_by_run_per_timestamp(data):
+    # Output will be: {template: [ instantiation [ [f_ts_0, fs_ts_1, ...], [sec_ts_0, sec_ts_1], ... ] ], ...}
     output = {}
-    for (key, value) in data.items():
+    for (template, value) in data.items():
         run_agg = []
         # First iterate over all query instantiations
         for i in range(len(value[0])):
@@ -98,7 +100,7 @@ def group_by_run_per_timestamp(data):
 
             merged = [list(x) for x in list(zip_longest(*lists_to_merge, fillvalue=None))]
             run_agg.append(merged)
-        output[key] = run_agg
+        output[template] = run_agg
     return output
 
 

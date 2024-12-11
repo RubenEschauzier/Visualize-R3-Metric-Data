@@ -6,7 +6,6 @@ def create_big_comparative_bar_plot(template_to_data, save_location=None):
                 DDEEFF
                 GGHHII
                 .JJKK."""
-    fig, axes = plt.subplots(4, 3, figsize=(17.6, 12), dpi=300)  # 4 rows, 3 columns
     fig, ax_dict = plt.subplot_mosaic(mosaic, figsize=(17.6, 12), sharey=True)
 
     timed_out = ['interactive-short-2', 'interactive-short-3', 'interactive-short-6']
@@ -46,6 +45,47 @@ def create_big_comparative_bar_plot(template_to_data, save_location=None):
         plt.show()
 
 
+def create_big_bar_plot(template_to_data, save_location=None):
+    mosaic = """AABBCC
+                DDEEFF
+                GGHHII
+                .JJKK."""
+    fig, ax_dict = plt.subplot_mosaic(mosaic, figsize=(17.6, 12), sharey=True)
+
+    timed_out = ['interactive-short-2', 'interactive-short-3', 'interactive-short-6']
+    templates = [template for template in template_to_data.keys() if template not in timed_out]
+    # for template, timings in plot_data.items():
+    #     save_location_plot = os.path.join(ROOT_DIR, 'output', 'timing_plots', '{}.pdf'.format(template))
+    #     create_comparative_bar_plot(timings[2], timings[0], timings[1],
+    #                                 title=template, save_location=save_location_plot)
+
+    for i, ax in enumerate(ax_dict.values()):
+        template = templates[i]
+        values = template_to_data[template]
+        x = [i*.4 for i in np.arange(len(values[1]))]
+        # Bar width
+        width = 0.2
+        # Create the plot
+        ax.bar(x, values[0], width, color='royalblue', label='R3', edgecolor='black', alpha=1, zorder=2)
+
+        # Adding scientific touches
+        ax.set_title("{}".format(template), fontsize=14)
+        ax.set_xticks(ticks=x, labels=values[1], fontsize=10, rotation=80, ha="right")
+        ax.grid(axis='y', linestyle='--', linewidth=0.7, alpha=0.7)
+
+    ax_dict['D'].tick_params('y', labelleft=True)
+    ax_dict['G'].tick_params('y', labelleft=True)
+    ax_dict['J'].tick_params('y', labelleft=True)
+    ax_dict['J'].set_ylabel('R3', fontsize=12)
+    ax_dict['D'].set_ylabel('R3', fontsize=12)
+    ax_dict['G'].set_ylabel('R3', fontsize=12)
+    ax_dict['A'].legend(loc='upper left', fontsize=10)
+
+    plt.tight_layout()
+    if save_location:
+        plt.savefig(save_location, bbox_inches='tight')
+    else:
+        plt.show()
 
 def create_comparative_bar_plot(categories, time_first, time_last, title='Comparative Bar Plot', save_location=None):
     """
