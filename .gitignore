@@ -1,6 +1,6 @@
-/data
-/data_bak
-/output
+/data/*
+/data_bak/*
+/output/*
 !/output/plots/.keep
 !/data/.keep
 !/data/dieff_data/.keep
