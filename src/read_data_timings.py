@@ -225,6 +225,13 @@ def get_combined_means_std(grouped_by_ts_mean, grouped_by_ts_std, run_counts):
 
 # From https://www.statstodo.com/CombineMeansSDs.php
 def combine_means_stds(means, std, counts):
+    nans = np.isnan(means)
+    print(means)
+    means = np.array(means)[~nans]
+    std = np.array(std)[~nans]
+    counts = np.array(counts)[~nans]
+    if len(means) == 0:
+        return float('nan'), float('nan')
     ex = []
     exx = []
     tn = 0

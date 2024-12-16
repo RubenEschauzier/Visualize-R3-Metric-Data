@@ -1,4 +1,9 @@
 /data
 /data_bak
+/output
+!/output/plots/.keep
 !/data/.keep
+!/data/dieff_data/.keep
+!/data/r3_data/.keep
+!/data/timings/.keep
 __pycache__
