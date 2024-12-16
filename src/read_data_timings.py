@@ -1,5 +1,7 @@
 import math
 import os
+from collections import defaultdict
+
 import pandas as pd
 import numpy as np
 from itertools import zip_longest
@@ -39,9 +41,88 @@ def read_query_times(root_dir):
     output = {}
     for i in range(len(list(run_data.values())[0])):
         output[i] = [query_time[i] for query_time in run_data.values()]
-
     return output
 
+def rel1st(t_first, t_total, t_first_std, t_total_std):
+    rel1st_val = t_first / t_total
+    rel1st_var = ((t_first_std / t_first)**2 + (t_total_std / t_total)**2)*(rel1st_val**2)
+    return rel1st_val, rel1st_var
+
+def relcmpl(t_last, t_total, t_last_std, t_total_std):
+    relcmpl_val = t_last / t_total
+    relcmpl_var = ((t_last_std / t_last)**2 + (t_total_std / t_total)**2)*(relcmpl_val**2)
+    return relcmpl_val, relcmpl_var
+
+def combine_runs_test(run_data, experiments_list, timeout):
+    experiment_to_rel1st = {}
+    experiment_to_relcmpl = {}
+    for experiment in experiments_list:
+        print(experiment)
+        output_key = experiment['combination']
+        output_name = experiment['type']
+        data = run_data[output_key]
+        run_rel1st = defaultdict(list)
+        run_rel1st_std = defaultdict(list)
+        run_relcmpl = defaultdict(list)
+        run_relcmpl_std = defaultdict(list)
+        for run in data:
+            replications = list(run['replication'])[0]
+            grouped_means, grouped_std, grouped_mean_time = group_by_template(run)
+            for template in grouped_means.keys():
+                template_rel1st = []
+                template_rel1st_std = []
+                template_relcmpl = []
+                template_relcmpl_std = []
+                counts = []
+                # Iterate over instantiations
+                for i in range(len(grouped_means[template])):
+                    # For each instantiation we have average timestamps with std and total execution time query
+                    # So, we take total execution times, while setting time for queries that time out to timeout value
+                    # We take average and std of those execution times, calculate the metrics while using the
+                    # propagation of errors formula to get the std of this metric value.
+                    times, n_nan_times = convert_to_number(grouped_mean_time[template][i])
+                    counts.append(replications)
+                    mean_timestamps, _ = convert_to_number(grouped_means[template][i])
+                    std_timestamps, _ = convert_to_number(grouped_std[template][i])
+                    times = [x if not math.isnan(x) else timeout for x in times]
+
+                    if n_nan_times == len(times) or len(mean_timestamps) == 0:
+                        template_rel1st.append(float('nan'))
+                        template_rel1st_std.append(float('nan'))
+                        template_relcmpl.append(float('nan'))
+                        template_relcmpl_std.append(float('nan'))
+                        continue
+
+                    rel1st_val, rel1st_std = rel1st(
+                        mean_timestamps[0], np.mean(times), std_timestamps[0], np.std(times)
+                    )
+                    relcmpl_val, relcmpl_std = relcmpl(
+                        mean_timestamps[-1], np.mean(times), std_timestamps[-1], np.std(times)
+                    )
+                    print(relcmpl_val, relcmpl_std)
+                    template_rel1st.append(rel1st_val)
+                    template_rel1st_std.append(rel1st_std)
+                    template_relcmpl.append(relcmpl_val)
+                    template_relcmpl_std.append(relcmpl_std)
+                # Combine the means of the templates.
+                template_mean_rel1st, template_std_rel1st = combine_means_stds(
+                    template_rel1st, template_rel1st_std, counts
+                )
+                template_mean_relcmpl, template_std_relcmpl = combine_means_stds(
+                    template_relcmpl, template_relcmpl_std, counts
+                )
+                run_rel1st[template].append(template_mean_rel1st)
+                run_rel1st_std[template].append(math.sqrt(template_std_rel1st))
+                run_relcmpl[template].append(template_mean_relcmpl)
+                run_relcmpl_std[template].append(math.sqrt(template_std_relcmpl))
+        experiment_to_rel1st[output_name] = run_rel1st
+        experiment_to_relcmpl[output_name] = run_relcmpl
+    return experiment_to_rel1st, experiment_to_relcmpl
+
+def convert_to_number(data):
+    as_number = [fast_real(x) for x in data]
+    n_nan = len([0 for x in as_number if math.isnan(x)])
+    return [fast_real(x) for x in data], n_nan
 
 def combine_runs(run_data, experiments_list):
     combined_outputs_mean = {}
@@ -56,7 +137,7 @@ def combine_runs(run_data, experiments_list):
         run_counts = []
         for run in data:
             run_counts.append(list(run['replication'])[0])
-            grouped_means, grouped_std = group_by_template(run)
+            grouped_means, grouped_std, _ = group_by_template(run)
             for key in grouped_means.keys():
                 if key not in grouped_runs_mean:
                     grouped_runs_mean[key] = []
@@ -74,17 +155,29 @@ def combine_runs(run_data, experiments_list):
 def group_by_template(run_data):
     output_mean = {}
     output_std = {}
+    output_times = {}
     grouped_means = run_data.groupby('name')['timestamps'].apply(lambda x: list(x)).to_dict()
     grouped_std = run_data.groupby('name')['timestampsStd'].apply(lambda x: list(x)).to_dict()
+    grouped_min = run_data.groupby('name')['timestampsMin'].apply(lambda x: list(x)).to_dict()
+    grouped_time = run_data.groupby('name')['times'].apply(lambda x: list(x)).to_dict()
 
     for key_mean, value_mean in grouped_means.items():
-        output_mean[key_mean] = [timestamps.split(' ') if isinstance(timestamps, str) else []
-                                 for timestamps in value_mean]
+        # For short-1 we use the minimal timestamps, as this run went wrong and the averaged are ruined
+        # By a single excessively long-running query (timestamp > query run time).
+        if key_mean == 'interactive-short-1':
+            output_mean[key_mean] = [timestamps.split(' ') if isinstance(timestamps, str) else []
+                                     for timestamps in grouped_min[key_mean]]
+        else:
+            output_mean[key_mean] = [timestamps.split(' ') if isinstance(timestamps, str) else []
+                                     for timestamps in value_mean]
     for key_std, value_std in grouped_std.items():
         output_std[key_std] = [timestamps.split(' ') if isinstance(timestamps, str) else []
                                for timestamps in value_std]
+    for key_times, value_times in grouped_time.items():
+        output_times[key_times] = [timestamps.split(' ') if isinstance(timestamps, str) else []
+                               for timestamps in value_times]
 
-    return output_mean, output_std
+    return output_mean, output_std, output_times
 
 
 def group_by_run_per_timestamp(data):
@@ -201,8 +294,43 @@ def prepare_plot_data(data):
         template_to_data[template] = [experiment_timings_first, experiment_timings_last, experiments]
     return template_to_data
 
+def prepare_plot_data_corrected(data_rel1st, data_relcmpl):
+    template_to_data = {}
+    experiments = data_rel1st.keys()
+    for template, timings in list(data_rel1st.values())[0].items():
+        experiment_timings_rel1st = []
+        experiment_timings_relcmpl = []
+        for experiment in experiments:
+            mean_of_runs_rel1st = np.mean(data_rel1st[experiment][template])
+            mean_of_runs_relcmpl = np.mean(data_relcmpl[experiment][template])
+            experiment_timings_rel1st.append(mean_of_runs_rel1st)
+            experiment_timings_relcmpl.append(mean_of_runs_relcmpl)
+
+        template_to_data[template] = [experiment_timings_rel1st, experiment_timings_relcmpl, experiments]
+    return template_to_data
+
+def prepare_single_run(data, experiments, run_id):
+    template_data = {}
+    run_data = data[run_id]
+    for experiment in experiments:
+        output_key = experiment['combination']
+        output_name = experiment['type']
+        single_run = data[output_key][run_id]
+        templates = list(set(single_run['name']))
+        templates.sort()
+
+        for template in templates:
+            template_timings = single_run.loc[single_run['name'] == template]
+            instantiation_timestamps = list(template_timings['timestamps'])
+            print(instantiation_timestamps)
+            for timestamps_string in instantiation_timestamps:
+                if isinstance(timestamps_string, str):
+                    timestamps_list = [ fast_real(timestamp) for timestamp in timestamps_string.split(' ')]
 
 
+        timestamps_string = single_run['timestamps']
+
+    pass
 
 
 if __name__ == "__main__":

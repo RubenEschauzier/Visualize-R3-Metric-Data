@@ -2,14 +2,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def create_big_comparative_bar_plot(template_to_data, save_location=None):
-    mosaic = """AABBCC
-                DDEEFF
-                GGHHII
-                .JJKK."""
+    mosaic = """AABB
+                CCDD
+                EEGG
+                HHII"""
     fig, ax_dict = plt.subplot_mosaic(mosaic, figsize=(17.6, 12), sharey=True)
 
-    timed_out = ['interactive-short-2', 'interactive-short-3', 'interactive-short-6']
-    templates = [template for template in template_to_data.keys() if template not in timed_out]
+    exclude = ['interactive-short-1',
+               'interactive-short-2',
+               'interactive-short-3',
+               'interactive-short-4',
+               'interactive-short-5',
+               'interactive-short-6']
+    templates = [template for template in template_to_data.keys() if template not in exclude]
     # for template, timings in plot_data.items():
     #     save_location_plot = os.path.join(ROOT_DIR, 'output', 'timing_plots', '{}.pdf'.format(template))
     #     create_comparative_bar_plot(timings[2], timings[0], timings[1],
@@ -26,17 +31,26 @@ def create_big_comparative_bar_plot(template_to_data, save_location=None):
         ax.bar(x, timings[1], width, color='orange', label='relRTCmpl', edgecolor='black', alpha=1, zorder=1)
 
         # Adding scientific touches
-        ax.set_title("{}".format(template), fontsize=14)
-        ax.set_xticks(ticks=x, labels=timings[2], fontsize=10, rotation=80, ha="right")
+        ax.set_title("{}".format(template), fontsize=20)
+        ax.set_xticks(ticks=x, labels=timings[2], fontsize=15, rotation=80, ha="right")
         ax.grid(axis='y', linestyle='--', linewidth=0.7, alpha=0.7)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
 
-    ax_dict['D'].tick_params('y', labelleft=True)
-    ax_dict['G'].tick_params('y', labelleft=True)
-    ax_dict['J'].tick_params('y', labelleft=True)
-    ax_dict['J'].set_ylabel('Relative Arrival Time', fontsize=12)
-    ax_dict['D'].set_ylabel('Relative Arrival Time', fontsize=12)
-    ax_dict['G'].set_ylabel('Relative Arrival Time', fontsize=12)
-    ax_dict['A'].legend(loc='upper left', fontsize=10)
+
+    ax_dict['A'].tick_params('y', labelleft=True)
+    ax_dict['C'].tick_params('y', labelleft=True)
+    ax_dict['E'].tick_params('y', labelleft=True)
+    ax_dict['H'].tick_params('y', labelleft=True)
+
+    ax_dict['A'].set_ylabel('Relative Arrival Time', fontsize=14)
+    ax_dict['C'].set_ylabel('Relative Arrival Time', fontsize=14)
+    ax_dict['E'].set_ylabel('Relative Arrival Time', fontsize=14)
+    ax_dict['H'].set_ylabel('Relative Arrival Time', fontsize=14)
+
+    handles, labels = ax_dict['A'].get_legend_handles_labels()
+
+    fig.legend(handles, labels, loc='upper center', fontsize=16)
 
     plt.tight_layout()
     if save_location:
@@ -46,14 +60,20 @@ def create_big_comparative_bar_plot(template_to_data, save_location=None):
 
 
 def create_big_bar_plot(template_to_data, save_location=None):
-    mosaic = """AABBCC
-                DDEEFF
-                GGHHII
-                .JJKK."""
+    mosaic = """AABB
+                CCDD
+                EEGG
+                HHII"""
+
     fig, ax_dict = plt.subplot_mosaic(mosaic, figsize=(17.6, 12), sharey=True)
 
-    timed_out = ['interactive-short-2', 'interactive-short-3', 'interactive-short-6']
-    templates = [template for template in template_to_data.keys() if template not in timed_out]
+    exclude = ['interactive-short-1',
+               'interactive-short-2',
+               'interactive-short-3',
+               'interactive-short-4',
+               'interactive-short-5',
+               'interactive-short-6']
+    templates = [template for template in template_to_data.keys() if template not in exclude]
     # for template, timings in plot_data.items():
     #     save_location_plot = os.path.join(ROOT_DIR, 'output', 'timing_plots', '{}.pdf'.format(template))
     #     create_comparative_bar_plot(timings[2], timings[0], timings[1],
@@ -69,17 +89,27 @@ def create_big_bar_plot(template_to_data, save_location=None):
         ax.bar(x, values[0], width, color='royalblue', label='R3', edgecolor='black', alpha=1, zorder=2)
 
         # Adding scientific touches
-        ax.set_title("{}".format(template), fontsize=14)
-        ax.set_xticks(ticks=x, labels=values[1], fontsize=10, rotation=80, ha="right")
+        ax.set_title("{}".format(template), fontsize=20)
+        ax.set_xticks(ticks=x, labels=values[1], fontsize=15, rotation=80, ha="right")
+        # ax.set_yscale('log', base=2)
         ax.grid(axis='y', linestyle='--', linewidth=0.7, alpha=0.7)
 
-    ax_dict['D'].tick_params('y', labelleft=True)
-    ax_dict['G'].tick_params('y', labelleft=True)
-    ax_dict['J'].tick_params('y', labelleft=True)
-    ax_dict['J'].set_ylabel('R3', fontsize=12)
-    ax_dict['D'].set_ylabel('R3', fontsize=12)
-    ax_dict['G'].set_ylabel('R3', fontsize=12)
-    ax_dict['A'].legend(loc='upper left', fontsize=10)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+
+    ax_dict['A'].tick_params('y', labelleft=True)
+    ax_dict['C'].tick_params('y', labelleft=True)
+    ax_dict['E'].tick_params('y', labelleft=True)
+    ax_dict['H'].tick_params('y', labelleft=True)
+    ax_dict['A'].set_ylabel('R3', fontsize=18)
+    ax_dict['C'].set_ylabel('R3', fontsize=18)
+    ax_dict['E'].set_ylabel('R3', fontsize=18)
+    ax_dict['H'].set_ylabel('R3', fontsize=18)
+    handles, labels = ax_dict['A'].get_legend_handles_labels()
+
+    fig.legend(handles, labels, loc='upper center', fontsize=16)
+
+    # ax_dict['D'].legend(loc='upper right', fontsize=17)
 
     plt.tight_layout()
     if save_location:

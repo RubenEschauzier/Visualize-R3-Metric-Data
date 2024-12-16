@@ -78,7 +78,7 @@ def create_metrics_table_data(experiment_data):
 def compare_to_baseline(baseline, template_metrics):
     # List on a per metric basis, so first element is # times that for first metric it is better
     n = len(template_metrics[list(template_metrics.keys())[0]])
-    experiment_better = [0 for i in range(n)]
+    experiments_better = [0 for i in range(n)]
     experiments_worse = [0 for i in range(n)]
     total = [0 for i in range(n)]
     for template, metrics in template_metrics.items():
@@ -87,11 +87,11 @@ def compare_to_baseline(baseline, template_metrics):
                 if val_compare != float('nan') and val_baseline != float('nan'):
                     total[i] += 1
                     if val_compare > 1.1 * val_baseline:
-                        experiments_worse[i] += 1
+                        experiments_better[i] += 1
                     elif val_compare < .9 * val_baseline:
-                        experiment_better[i] += 1
+                        experiments_worse[i] += 1
 
-    percentage_better = [100*(experiment_better[i]/total[i]) for i in range(n)]
+    percentage_better = [100*(experiments_better[i]/total[i]) for i in range(n)]
     percentage_worse = [100*(experiments_worse[i]/total[i]) for i in range(n)]
 
     return percentage_better, percentage_worse
@@ -165,7 +165,8 @@ if __name__ == '__main__':
         {"type": "is-rcc-1", "combination": 11},
         {"type": "is-rcc-2", "combination": 12},
         {"type": "is-rel-1", "combination": 13},
-        {"type": "is-rel-2", "combination": 14}
+        {"type": "is-rel-2", "combination": 14},
+        {"type": "oracle", "combination": 15}
     ]
     df_r3 = create_r3_table(experiments, ROOT_DIR, 'data/r3_data/', ['R3', 'R3Http'])
     df_dieff = create_dieff_table(experiments, ROOT_DIR, 'data/dieff_data/', ['Dieff', 'DieffD'])
