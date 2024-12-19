@@ -210,14 +210,102 @@ def plot_retrieval_and_result_dieff(x1, y1, x2, y2, labels, colors, xlabel, ylab
     plt.grid(alpha=0.5)
     plt.show()
 
+def horizontal_bar_plot(template_to_r3_data, template_to_timing_data, save_location = None):
+    # Sample data (replace with actual values)
+    exclude = ['interactive-short-1',
+               'interactive-short-2',
+               'interactive-short-3',
+               'interactive-short-4',
+               'interactive-short-5',
+               'interactive-short-6']
+    templates = [template for template in template_to_r3_data.keys() if template not in exclude]
 
-# # Example input
-# x1 = [0, 1, 2, 3, 4]
-# y1 = [0, 1, 4, 9, 16]
-# x2 = [0, 1, 2, 3, 4]
-# y2 = [16, 9, 4, 1, 0]
-# labels = ['Increasing', 'Decreasing']
-# colors = ['blue', 'red']
-#
-# # Call the function to plot
-# plot_two_lines(x1, y1, x2, y2, labels, colors, xlabel='X-Axis', ylabel='Y-Axis', title='Two Line Plot')
+    algorithms_tested = list(template_to_r3_data.values())[0][1]
+    n_categories = len(algorithms_tested)
+
+    # Bar width and spacing
+    bar_width = 0.20
+    group_spacing = 5  # Space between groups
+    category_positions = np.arange(n_categories) # Positions of each category
+    for k in range(len(category_positions)):
+        category_positions[k] += group_spacing
+    # Define mosaic layout
+    layout = [
+        ["plot1", "plot2"],
+        ["plot3", "plot4"],
+        ["plot5", "plot6"],
+        ["plot7", "plot8"],
+    ]
+    max_val = 1.4
+    # New color palette
+    colors = ["#DB4226", "#DBC82E", "#684DDB", ]  # Black, orange, blue
+
+    # Create the mosaic figure
+    fig, axes = plt.subplot_mosaic(layout, figsize=(15, 20))
+
+    # Generate subplots
+    for i, key in enumerate(axes.keys()):
+        template = templates[i]
+        r3s = template_to_r3_data[template]
+        timings = template_to_timing_data[template]
+
+        ax = axes[key]
+
+        # Adjust positions for each bar
+        for idx, cat in enumerate(algorithms_tested):
+            ax.barh(
+                category_positions[idx] - bar_width, timings[1][idx],
+                height=bar_width, color=colors[1], label='relcmpl' if idx == 0 else ""
+            )
+            ax.barh(
+                category_positions[idx] , timings[0][idx],
+                height=bar_width, color=colors[0], label='rel1st' if idx == 0 else ""
+            )
+            ax.barh(
+                category_positions[idx] + bar_width, r3s[0][idx],
+                height=bar_width, color=colors[2], label='$R^{3}$' if idx == 0 else ""
+            )
+
+        # Format axes
+        ax.set_yticks(category_positions)
+        ax.yaxis.set_label_position("right"),
+        ax.set_yticklabels(algorithms_tested if i % 2 == 0 else [], size=18)
+        ax.set_title(templates[i], size=18, fontweight='bold', pad=-200)
+        if i == 6 or i == 7:
+            ax.set_xlabel("Relative Result Arrival Time (s) / $R^3$", size=16)
+        ax.grid(axis='x', linestyle='--', linewidth=0.5, alpha=0.7)  # Add gridlines
+        ax.tick_params(axis='x', labelsize=16)
+        if i % 2 == 0:
+            ax.tick_params(axis='y', labelleft=False, labelright=True, left=False, right=True)
+            for label in ax.get_yticklabels():
+                label.set_horizontalalignment('center')
+                label.set_x(1.13)
+            left, right = ax.get_xlim()
+            ax.set_xlim(max_val, 0)
+            ax.spines['left'].set_visible(False)
+        else:
+            ax.set_xlim(0, max_val)
+            ax.tick_params(axis='y', labelleft=False, labelright=False, right=False, left=True)
+            ax.spines['right'].set_visible(False)
+        # Add legend to the first subplot only
+        if i == 0:
+            handles, labels = ax.get_legend_handles_labels()
+            print(handles)
+            order = [2, 1, 0]
+            ax.legend([handles[idx] for idx in order],
+                      [labels[idx] for idx in order],
+                      loc="upper left", fontsize='large')
+
+        ax.spines['top'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+
+    # Adjust layout
+    plt.tight_layout()
+    if save_location:
+        plt.savefig(save_location, bbox_inches='tight')
+    else:
+        plt.show()
+
+if __name__ == '__main__':
+    pass
+    # horizontal_bar_plot()

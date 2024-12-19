@@ -2,38 +2,25 @@ import os
 import numpy as np
 
 from main import ROOT_DIR
-from src.create_plots import create_big_comparative_bar_plot, create_big_bar_plot
+from src.create_plots import create_big_comparative_bar_plot, create_big_bar_plot, horizontal_bar_plot
 from src.read_data_dieff import read_raw_metric_data
 from src.read_data_timings import read_query_times, combine_runs, average_time_first_last_result, make_relative, \
-    prepare_plot_data, prepare_single_run, combine_runs_test, prepare_plot_data_corrected
+    prepare_plot_data, prepare_single_run, combine_runs_rel, prepare_plot_data_corrected
 
 
-def create_combined_timings_plot(id_to_experiment, root_dir, save_location_plot=None):
+def create_horizontal_combined_plot(id_to_experiment, root_dir, save_location_plot=None):
+    r3_metrics_raw = read_raw_metric_data(os.path.join(root_dir, 'data_bak', 'r3_data'))
+    r3_metrics_raw_sorted = dict(sorted(r3_metrics_raw.items()))
+    data_per_algorithm_raw = {id_to_experiment[int(key)]['type']: value for key, value in r3_metrics_raw_sorted.items()}
+    plot_r3_data = group_per_template(data_per_algorithm_raw, 'unweighted')
+
     timings = read_query_times(os.path.join(root_dir, 'data'))
-    combine_runs_test(timings, id_to_experiment, 180_000)
+    combine_runs(timings, id_to_experiment)
     combined_mean, combined_std = combine_runs(timings, id_to_experiment)
     result = average_time_first_last_result(combined_mean)
     relative = make_relative(result)
-    plot_data = prepare_plot_data(relative)
-    create_big_comparative_bar_plot(plot_data, save_location_plot)
-
-def create_combined_timings_plot_corrected(id_to_experiment, root_dir, save_location_plot=None):
-    timings = read_query_times(os.path.join(root_dir, 'data'))
-    combined_rel1st, combined_relcmpl = combine_runs_test(timings, id_to_experiment, 180_000)
-    plot_data = prepare_plot_data_corrected(combined_rel1st, combined_relcmpl)
-    create_big_comparative_bar_plot(plot_data, save_location_plot)
-
-def create_combined_timings_plot_single_run(id_to_experiment, root_dir, save_location_plot=None):
-    timings = read_query_times(os.path.join(root_dir, 'data'))
-    single_run_data = prepare_single_run(timings, id_to_experiment, 0)
-
-def create_r3_values_plot(id_to_experiment, root_dir, save_location_plot=None):
-    r3_metrics_raw = read_raw_metric_data(os.path.join(root_dir, 'data', 'r3_data'))
-    r3_metrics_raw_sorted = dict(sorted(r3_metrics_raw.items()))
-    data_per_algorithm_raw = {id_to_experiment[int(key)]['type']: value for key, value in r3_metrics_raw_sorted.items()}
-    grouped_metrics = group_per_template(data_per_algorithm_raw, 'unweighted')
-    create_big_bar_plot(grouped_metrics, save_location_plot)
-
+    plot_timing_data = prepare_plot_data(relative)
+    horizontal_bar_plot(plot_r3_data, plot_timing_data, save_location_plot)
 
 def group_per_template(metric_data, metric_name):
     output = {}
@@ -77,9 +64,11 @@ if __name__ == "__main__":
         {"type": "oracle", "combination": 15}
     ]
     # create_combined_timings_plot_single_run(experiments, ROOT_DIR)
-    save_location_timings_plot = os.path.join(ROOT_DIR, 'output', 'timing_plots', 'combined_timing_plot.pdf')
-    create_combined_timings_plot_corrected(experiments, ROOT_DIR, save_location_timings_plot)
+    # save_location_timings_plot = os.path.join(ROOT_DIR, 'output', 'plots', 'combined_timing_plot.pdf')
+    # create_combined_timings_plot_corrected(experiments, ROOT_DIR)
 
-    # CONSIDER MAKING THIS A LOG2 PLOT AS IN PREVIOUS PAPER
-    save_location_r3_plot = os.path.join(ROOT_DIR, 'output', 'timing_plots', 'combined_r3_plot.pdf')
-    create_r3_values_plot(experiments, ROOT_DIR, save_location_r3_plot)
+    # save_location_r3_plot = os.path.join(ROOT_DIR, 'output', 'plots', 'combined_r3_plot.pdf')
+    # create_r3_values_plot(experiments, ROOT_DIR)
+
+    save_location_horizontal_plot = os.path.join(ROOT_DIR, 'output', 'plots', 'combined_r3_timings_plot.pdf')
+    create_horizontal_combined_plot(experiments, ROOT_DIR, save_location_horizontal_plot)

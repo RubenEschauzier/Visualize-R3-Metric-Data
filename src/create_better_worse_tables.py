@@ -4,7 +4,7 @@ import copy
 
 from main import ROOT_DIR
 from src.read_data_dieff import read_raw_metric_data
-from src.read_data_timings import read_query_times, combine_runs
+from src.read_data_timings import read_query_times, combine_runs, combine_runs_rel
 
 
 def get_timings_table_data(id_to_experiment, root_dir):
@@ -170,10 +170,10 @@ if __name__ == '__main__':
     ]
     df_r3 = create_r3_table(experiments, ROOT_DIR, 'data/r3_data/', ['R3', 'R3Http'])
     df_dieff = create_dieff_table(experiments, ROOT_DIR, 'data/dieff_data/', ['Dieff', 'DieffD'])
-    to_latex(df_dieff)
+    # to_latex(df_dieff)
     table_data_result_arrival = get_timings_table_data(experiments, ROOT_DIR)
     df_results = create_table(table_data_result_arrival, ['relRT1st', 'relRTCmpl'])
     joined_df = df_results.join(df_dieff)
-    to_latex(joined_df)
-    to_latex(df_r3)
+    total_df = df_results.join(df_r3).join(df_dieff)
+    to_latex(total_df)
 

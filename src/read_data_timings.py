@@ -53,7 +53,7 @@ def relcmpl(t_last, t_total, t_last_std, t_total_std):
     relcmpl_var = ((t_last_std / t_last)**2 + (t_total_std / t_total)**2)*(relcmpl_val**2)
     return relcmpl_val, relcmpl_var
 
-def combine_runs_test(run_data, experiments_list, timeout):
+def combine_runs_rel(run_data, experiments_list, timeout):
     experiment_to_rel1st = {}
     experiment_to_relcmpl = {}
     for experiment in experiments_list:
@@ -105,10 +105,10 @@ def combine_runs_test(run_data, experiments_list, timeout):
                     template_relcmpl.append(relcmpl_val)
                     template_relcmpl_std.append(relcmpl_std)
                 # Combine the means of the templates.
-                template_mean_rel1st, template_std_rel1st = combine_means_stds(
+                template_mean_rel1st, template_std_rel1st = combine_means_stds_rel(
                     template_rel1st, template_rel1st_std, counts
                 )
-                template_mean_relcmpl, template_std_relcmpl = combine_means_stds(
+                template_mean_relcmpl, template_std_relcmpl = combine_means_stds_rel(
                     template_relcmpl, template_relcmpl_std, counts
                 )
                 run_rel1st[template].append(template_mean_rel1st)
@@ -225,6 +225,24 @@ def get_combined_means_std(grouped_by_ts_mean, grouped_by_ts_std, run_counts):
 
 # From https://www.statstodo.com/CombineMeansSDs.php
 def combine_means_stds(means, std, counts):
+    ex = []
+    exx = []
+    tn = 0
+    tx = 0
+    txx = 0
+    for i in range(len(means)):
+        ex.append(counts[i] * means[i])
+        exx.append(std[i] ** 2 * (counts[i] - 1) + (ex[i] ** 2 / counts[i]))
+        tn += counts[i]
+        tx += ex[i]
+        txx += exx[i]
+    combined_mean = tx / tn
+    combined_var = (txx - (tx ** 2 / tn)) / (tn - 1)
+    combined_std = math.sqrt(combined_var)
+    return combined_mean, combined_std
+
+
+def combine_means_stds_rel(means, std, counts):
     nans = np.isnan(means)
     print(means)
     means = np.array(means)[~nans]
@@ -247,7 +265,6 @@ def combine_means_stds(means, std, counts):
     combined_var = (txx - (tx ** 2 / tn)) / (tn - 1)
     combined_std = math.sqrt(combined_var)
     return combined_mean, combined_std
-
 
 def average_time_first_last_result(combined_runs):
     output = {}
@@ -329,7 +346,6 @@ def prepare_single_run(data, experiments, run_id):
         for template in templates:
             template_timings = single_run.loc[single_run['name'] == template]
             instantiation_timestamps = list(template_timings['timestamps'])
-            print(instantiation_timestamps)
             for timestamps_string in instantiation_timestamps:
                 if isinstance(timestamps_string, str):
                     timestamps_list = [ fast_real(timestamp) for timestamp in timestamps_string.split(' ')]
