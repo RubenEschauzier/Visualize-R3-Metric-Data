@@ -255,7 +255,7 @@ def horizontal_bar_plot(template_to_r3_data, template_to_timing_data, save_locat
         for idx, cat in enumerate(algorithms_tested):
             ax.barh(
                 category_positions[idx] - bar_width, timings[1][idx],
-                height=bar_width, color=colors[1], label='relcmpl' if idx == 0 else ""
+                height=bar_width, color=colors[1], label='relCmpl' if idx == 0 else ""
             )
             ax.barh(
                 category_positions[idx] , timings[0][idx],
@@ -272,7 +272,7 @@ def horizontal_bar_plot(template_to_r3_data, template_to_timing_data, save_locat
         ax.set_yticklabels(algorithms_tested if i % 2 == 0 else [], size=18)
         ax.set_title(templates[i], size=18, fontweight='bold', pad=-200)
         if i == 6 or i == 7:
-            ax.set_xlabel("Relative Result Arrival Time (s) / $R^3$", size=16)
+            ax.set_xlabel("Relative Result Arrival Time (s) / \n $R^3$", size=16)
         ax.grid(axis='x', linestyle='--', linewidth=0.5, alpha=0.7)  # Add gridlines
         ax.tick_params(axis='x', labelsize=16)
         if i % 2 == 0:
@@ -288,13 +288,13 @@ def horizontal_bar_plot(template_to_r3_data, template_to_timing_data, save_locat
             ax.tick_params(axis='y', labelleft=False, labelright=False, right=False, left=True)
             ax.spines['right'].set_visible(False)
         # Add legend to the first subplot only
-        if i == 0:
+        if i == 6:
             handles, labels = ax.get_legend_handles_labels()
             print(handles)
             order = [2, 1, 0]
             ax.legend([handles[idx] for idx in order],
                       [labels[idx] for idx in order],
-                      loc="upper left", fontsize='large')
+                      loc="upper left", fontsize='xx-large')
 
         ax.spines['top'].set_visible(False)
         ax.spines['bottom'].set_visible(False)

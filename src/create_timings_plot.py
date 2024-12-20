@@ -63,12 +63,6 @@ if __name__ == "__main__":
         {"type": "is-rel-2", "combination": 14},
         {"type": "oracle", "combination": 15}
     ]
-    # create_combined_timings_plot_single_run(experiments, ROOT_DIR)
-    # save_location_timings_plot = os.path.join(ROOT_DIR, 'output', 'plots', 'combined_timing_plot.pdf')
-    # create_combined_timings_plot_corrected(experiments, ROOT_DIR)
-
-    # save_location_r3_plot = os.path.join(ROOT_DIR, 'output', 'plots', 'combined_r3_plot.pdf')
-    # create_r3_values_plot(experiments, ROOT_DIR)
 
     save_location_horizontal_plot = os.path.join(ROOT_DIR, 'output', 'plots', 'combined_r3_timings_plot.pdf')
     create_horizontal_combined_plot(experiments, ROOT_DIR, save_location_horizontal_plot)
