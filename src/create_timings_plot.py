@@ -61,7 +61,8 @@ if __name__ == "__main__":
         {"type": "is-rcc-2", "combination": 12},
         {"type": "is-rel-1", "combination": 13},
         {"type": "is-rel-2", "combination": 14},
-        {"type": "oracle", "combination": 15}
+        {"type": "type-index", "combination": 15},
+        {"type": "oracle", "combination": 16}
     ]
 
     save_location_horizontal_plot = os.path.join(ROOT_DIR, 'output', 'plots', 'combined_r3_timings_plot.pdf')

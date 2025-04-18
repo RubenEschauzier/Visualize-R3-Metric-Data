@@ -66,6 +66,7 @@ def create_metrics_table_data(experiment_data):
     baseline = experiment_data['breadth-first']
     table_data = {}
     for experiment, data in experiment_data.items():
+        print(experiment)
         if experiment != 'breadth-first':
             better, worse = compare_to_baseline(baseline, experiment_data[experiment])
             experiment_comparison_data = []
@@ -82,13 +83,17 @@ def compare_to_baseline(baseline, template_metrics):
     experiments_worse = [0 for i in range(n)]
     total = [0 for i in range(n)]
     for template, metrics in template_metrics.items():
+        print(template)
+        print(metrics)
         for i in range(len(metrics)):
             for (val_compare, val_baseline) in zip(baseline[template][i], metrics[i]):
+                print(val_compare, val_baseline)
                 if val_compare != float('nan') and val_baseline != float('nan'):
                     total[i] += 1
                     if val_compare > 1.1 * val_baseline:
                         experiments_better[i] += 1
                     elif val_compare < .9 * val_baseline:
+                        print()
                         experiments_worse[i] += 1
 
     percentage_better = [100*(experiments_better[i]/total[i]) for i in range(n)]
@@ -129,6 +134,7 @@ def create_r3_table(id_to_experiment, root_dir, path_to_metric_data, metric_name
     path = os.path.join(root_dir, path_to_metric_data)
     raw_data = read_raw_metric_data(path)
     raw_data_sorted = dict(sorted(raw_data.items()))
+
     data_per_algorithm = {id_to_experiment[int(key)]['type']: value for key, value in raw_data_sorted.items()}
     data_per_algorithm_list = process_metrics_into_list(data_per_algorithm, [-1])
     table_data = create_metrics_table_data(data_per_algorithm_list)
@@ -166,14 +172,16 @@ if __name__ == '__main__':
         {"type": "is-rcc-2", "combination": 12},
         {"type": "is-rel-1", "combination": 13},
         {"type": "is-rel-2", "combination": 14},
-        {"type": "oracle", "combination": 15}
+        {"type": "type-index", "combination": 15},
+        {"type": "oracle", "combination": 16}
     ]
-    df_r3 = create_r3_table(experiments, ROOT_DIR, 'data/r3_data/', ['R3', 'R3Http'])
-    df_dieff = create_dieff_table(experiments, ROOT_DIR, 'data/dieff_data/', ['Dieff', 'DieffD'])
+    df_r3 = create_r3_table(experiments, ROOT_DIR, os.path.join('data', 'r3-metrics'), ['R3', 'R3Http'])
+    df_dieff = create_dieff_table(experiments, ROOT_DIR, os.path.join('data', 'dieff-metrics'), ['Dieff', 'DieffD'])
     # to_latex(df_dieff)
-    table_data_result_arrival = get_timings_table_data(experiments, ROOT_DIR)
-    df_results = create_table(table_data_result_arrival, ['relRT1st', 'relRTCmpl'])
-    joined_df = df_results.join(df_dieff)
-    total_df = df_results.join(df_r3).join(df_dieff)
-    to_latex(total_df)
+    # table_data_result_arrival = get_timings_table_data(experiments, ROOT_DIR)
+    # df_results = create_table(table_data_result_arrival, ['relRT1st', 'relRTCmpl'])
+    # joined_df = df_results.join(df_dieff)
+    # total_df = df_results.join(df_r3).join(df_dieff)
+    to_latex(df_r3)
+    to_latex(df_dieff)
 
