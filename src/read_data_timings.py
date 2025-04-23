@@ -43,6 +43,24 @@ def read_query_times(root_dir):
         output[i] = [query_time[i] for query_time in run_data.values()]
     return output
 
+def read_query_times_single_run(root_dir):
+    run_data = {}
+
+    i = 0
+    for root, dirs, files in os.walk(root_dir):
+        if 'query-times.csv' in files:
+            # Identify the `run_` directory by splitting the root path
+            parts = root.split(os.sep)
+            run_dir = next((part for part in parts if part.startswith("combination_")), None)
+
+            if run_dir:
+                # Read the CSV and append it to the corresponding `run_` group
+                csv_path = os.path.join(root, 'query-times.csv')
+                df = pd.read_csv(csv_path, sep=';')
+                run_data[i] = df
+                i += 1
+    return run_data
+
 def rel1st(t_first, t_total, t_first_std, t_total_std):
     rel1st_val = t_first / t_total
     rel1st_var = ((t_first_std / t_first)**2 + (t_total_std / t_total)**2)*(rel1st_val**2)

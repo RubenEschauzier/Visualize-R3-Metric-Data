@@ -3,14 +3,24 @@ import pandas as pd
 import copy
 
 from main import ROOT_DIR
+from src.create_timings_plot import index_to_experiment_name, extract_single_run_timestamps
 from src.read_data_dieff import read_raw_metric_data
-from src.read_data_timings import read_query_times, combine_runs, combine_runs_rel
+from src.read_data_timings import read_query_times, combine_runs, combine_runs_rel, read_query_times_single_run
 
 
-def get_timings_table_data(id_to_experiment, root_dir):
+def read_timings_data(id_to_experiment, root_dir):
     timings = read_query_times(os.path.join(root_dir, 'data'))
     combined_mean, combined_std = combine_runs(timings, id_to_experiment)
+    return combined_mean, combined_std
 
+def read_timings_data_single_run(id_to_experiment, root_dir):
+    timings = read_query_times_single_run(os.path.join(root_dir, 'data', 'timings'))
+    timings_named = index_to_experiment_name(timings, id_to_experiment)
+    timestamps = extract_single_run_timestamps(timings_named)
+    tes=5
+    return timestamps, []
+
+def get_timings_table_data(combined_mean, combined_std):
     # Experiment name to improvement data
     baseline = {}
     for template, timestamps in combined_mean['breadth-first'].items():
@@ -66,7 +76,6 @@ def create_metrics_table_data(experiment_data):
     baseline = experiment_data['breadth-first']
     table_data = {}
     for experiment, data in experiment_data.items():
-        print(experiment)
         if experiment != 'breadth-first':
             better, worse = compare_to_baseline(baseline, experiment_data[experiment])
             experiment_comparison_data = []
@@ -83,17 +92,13 @@ def compare_to_baseline(baseline, template_metrics):
     experiments_worse = [0 for i in range(n)]
     total = [0 for i in range(n)]
     for template, metrics in template_metrics.items():
-        print(template)
-        print(metrics)
         for i in range(len(metrics)):
-            for (val_compare, val_baseline) in zip(baseline[template][i], metrics[i]):
-                print(val_compare, val_baseline)
+            for (val_baseline, val_compare) in zip(baseline[template][i], metrics[i]):
                 if val_compare != float('nan') and val_baseline != float('nan'):
                     total[i] += 1
                     if val_compare > 1.1 * val_baseline:
                         experiments_better[i] += 1
                     elif val_compare < .9 * val_baseline:
-                        print()
                         experiments_worse[i] += 1
 
     percentage_better = [100*(experiments_better[i]/total[i]) for i in range(n)]
@@ -178,10 +183,12 @@ if __name__ == '__main__':
     df_r3 = create_r3_table(experiments, ROOT_DIR, os.path.join('data', 'r3-metrics'), ['R3', 'R3Http'])
     df_dieff = create_dieff_table(experiments, ROOT_DIR, os.path.join('data', 'dieff-metrics'), ['Dieff', 'DieffD'])
     # to_latex(df_dieff)
-    # table_data_result_arrival = get_timings_table_data(experiments, ROOT_DIR)
-    # df_results = create_table(table_data_result_arrival, ['relRT1st', 'relRTCmpl'])
-    # joined_df = df_results.join(df_dieff)
-    # total_df = df_results.join(df_r3).join(df_dieff)
-    to_latex(df_r3)
-    to_latex(df_dieff)
+    # mean, std = read_timings_data(experiments, ROOT_DIR)
+    mean, std = read_timings_data_single_run(experiments, ROOT_DIR)
+    table_data_result_arrival = get_timings_table_data(mean, std)
+    df_results = create_table(table_data_result_arrival, ['relRT1st', 'relRTCmpl'])
+    joined_df = df_results.join(df_dieff)
+    total_df = df_results.join(df_r3).join(df_dieff)
+    to_latex(total_df)
+    # to_latex(df_dieff)
 
