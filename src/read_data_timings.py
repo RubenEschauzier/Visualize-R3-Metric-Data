@@ -52,12 +52,12 @@ def read_query_times_single_run(root_dir):
             # Identify the `run_` directory by splitting the root path
             parts = root.split(os.sep)
             run_dir = next((part for part in parts if part.startswith("combination_")), None)
-
             if run_dir:
                 # Read the CSV and append it to the corresponding `run_` group
                 csv_path = os.path.join(root, 'query-times.csv')
                 df = pd.read_csv(csv_path, sep=';')
-                run_data[i] = df
+
+                run_data[int(run_dir.split("_")[1])] = df
                 i += 1
     return run_data
 
@@ -75,7 +75,6 @@ def combine_runs_rel(run_data, experiments_list, timeout):
     experiment_to_rel1st = {}
     experiment_to_relcmpl = {}
     for experiment in experiments_list:
-        print(experiment)
         output_key = experiment['combination']
         output_name = experiment['type']
         data = run_data[output_key]
@@ -308,32 +307,48 @@ def average_time_first_last_result(combined_runs):
     return output
 
 
-def make_relative(data):
+def make_relative(data, data_results=None):
     output = {}
+    output_results = {}
     for experiment, templates in data.items():
         relative_to_bfs = {}
+        relative_to_bfs_results = {}
         for template, timestamps in data[experiment].items():
             if timestamps[1] == 0:
                 relative_to_bfs[template] = [-1, -1]
             else:
                 relative_to_bfs[template] = [x / data['breadth-first'][template][1] for x in timestamps]
+                if data_results:
+                    relative_to_bfs_results[template] = (data_results[experiment][template] /
+                                                         data_results['breadth-first'][template])
                 # relative_to_bfs[template] = [ex/base for ex, base in zip(timestamps, data['breadth-first'][template])]
         output[experiment] = relative_to_bfs
+        output_results[experiment] = relative_to_bfs_results
 
-    return output
+    return output, output_results
 
 
-def prepare_plot_data(data):
+def prepare_plot_data(data, expected_order_experiments):
     # Convert plot data from experiment : template : timings to template : [ timings_first ] [timings_last] [experiment]
     template_to_data = {}
     experiments = data.keys()
     for template, timings in list(data.values())[0].items():
         experiment_timings_first = []
         experiment_timings_last = []
-        for experiment in experiments:
+        for experiment in expected_order_experiments:
             experiment_timings_first.append(data[experiment][template][0])
             experiment_timings_last.append(data[experiment][template][1])
-        template_to_data[template] = [experiment_timings_first, experiment_timings_last, experiments]
+        template_to_data[template] = [experiment_timings_first, experiment_timings_last, expected_order_experiments]
+    return template_to_data
+
+def prepare_plot_data_results(data, expected_order_experiments):
+    template_to_data = {}
+    experiments = data.keys()
+    for template, timings in list(data.values())[0].items():
+        experiment_result_relative = []
+        for experiment in expected_order_experiments:
+            experiment_result_relative.append(data[experiment][template])
+        template_to_data[template] = [experiment_result_relative, expected_order_experiments]
     return template_to_data
 
 def prepare_plot_data_corrected(data_rel1st, data_relcmpl):

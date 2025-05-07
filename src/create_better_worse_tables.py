@@ -1,4 +1,6 @@
 import os
+from typing import Literal
+
 import pandas as pd
 import copy
 
@@ -16,8 +18,7 @@ def read_timings_data(id_to_experiment, root_dir):
 def read_timings_data_single_run(id_to_experiment, root_dir):
     timings = read_query_times_single_run(os.path.join(root_dir, 'data', 'timings'))
     timings_named = index_to_experiment_name(timings, id_to_experiment)
-    timestamps = extract_single_run_timestamps(timings_named)
-    tes=5
+    timestamps, results = extract_single_run_timestamps(timings_named)
     return timestamps, []
 
 def get_timings_table_data(combined_mean, combined_std):
@@ -72,12 +73,12 @@ def create_table(table_data, metric_names):
     df_rounded = df.round(2)
     return df_rounded
 
-def create_metrics_table_data(experiment_data):
+def create_metrics_table_data(experiment_data, direction_better: Literal['lower', 'higher']):
     baseline = experiment_data['breadth-first']
     table_data = {}
     for experiment, data in experiment_data.items():
         if experiment != 'breadth-first':
-            better, worse = compare_to_baseline(baseline, experiment_data[experiment])
+            better, worse = compare_to_baseline(baseline, experiment_data[experiment], direction_better)
             experiment_comparison_data = []
             for i in range(len(better)):
                 experiment_comparison_data.append(better[i])
@@ -85,7 +86,7 @@ def create_metrics_table_data(experiment_data):
             table_data[experiment] = experiment_comparison_data
     return table_data
 
-def compare_to_baseline(baseline, template_metrics):
+def compare_to_baseline(baseline, template_metrics, direction_better: Literal['lower', 'higher']):
     # List on a per metric basis, so first element is # times that for first metric it is better
     n = len(template_metrics[list(template_metrics.keys())[0]])
     experiments_better = [0 for i in range(n)]
@@ -96,10 +97,18 @@ def compare_to_baseline(baseline, template_metrics):
             for (val_baseline, val_compare) in zip(baseline[template][i], metrics[i]):
                 if val_compare != float('nan') and val_baseline != float('nan'):
                     total[i] += 1
-                    if val_compare > 1.1 * val_baseline:
-                        experiments_better[i] += 1
-                    elif val_compare < .9 * val_baseline:
-                        experiments_worse[i] += 1
+                    if direction_better == 'higher':
+                        if val_compare > 1.1 * val_baseline:
+                            experiments_better[i] += 1
+                        elif val_compare < .9 * val_baseline:
+                            experiments_worse[i] += 1
+                    if direction_better == 'lower':
+                        if val_compare > 1.1 * val_baseline:
+                            experiments_worse[i] += 1
+                        elif val_compare < .9 * val_baseline:
+                            experiments_better[i] += 1
+
+
 
     percentage_better = [100*(experiments_better[i]/total[i]) for i in range(n)]
     percentage_worse = [100*(experiments_worse[i]/total[i]) for i in range(n)]
@@ -142,7 +151,7 @@ def create_r3_table(id_to_experiment, root_dir, path_to_metric_data, metric_name
 
     data_per_algorithm = {id_to_experiment[int(key)]['type']: value for key, value in raw_data_sorted.items()}
     data_per_algorithm_list = process_metrics_into_list(data_per_algorithm, [-1])
-    table_data = create_metrics_table_data(data_per_algorithm_list)
+    table_data = create_metrics_table_data(data_per_algorithm_list, 'higher')
     df = create_table(table_data, metric_names)
     return df
 
@@ -153,7 +162,7 @@ def create_dieff_table(id_to_experiment, root_dir, path_to_metric_data, metric_n
     data_per_algorithm_raw = {id_to_experiment[int(key)]['type']: value for key, value in raw_data_sorted.items()}
     data_per_algorithm = extract_dieff_metrics(data_per_algorithm_raw)
     data_per_algorithm_list = process_metrics_into_list(data_per_algorithm, [None, -1])
-    table_data = create_metrics_table_data(data_per_algorithm_list)
+    table_data = create_metrics_table_data(data_per_algorithm_list, 'lower')
     df = create_table(table_data, metric_names)
     return df
 
